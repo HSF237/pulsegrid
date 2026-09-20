@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -13,3 +14,11 @@ const firebaseConfig = {
 export const firebaseEnabled = Object.values(firebaseConfig).every(Boolean);
 export const firebaseApp = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 export const db = firebaseApp ? getFirestore(firebaseApp) : null;
+export const auth = firebaseApp ? getAuth(firebaseApp) : null;
+
+export async function ensureFirebaseSession() {
+  if (!auth) throw new Error("Firebase is not configured.");
+  if (auth.currentUser) return auth.currentUser;
+  const credential = await signInAnonymously(auth);
+  return credential.user;
+}
