@@ -8,7 +8,9 @@ PulseGrid is an open-source starting point for internal tools, SaaS control pane
 
 - Responsive sidebar and navbar with a mobile drawer
 - Analytics for active users, API traffic, database streams and devices
-- Live simulated hardware telemetry: uptime, CPU load, temperature, memory, ping and packet loss
+- Explicit Demo Mode with clearly labeled simulated/sample values
+- Live Mode adapters for HTTP/REST, WebSocket and Firebase Firestore telemetry
+- Hardware telemetry: uptime, CPU load, temperature, memory, ping and packet loss
 - Dynamic CPU history visualization without a charting dependency
 - Functional data table with filtering, sorting and pagination
 - Modular Firebase/Firestore configuration
@@ -65,11 +67,46 @@ The app initializes Firebase only when all required values exist. Without them, 
 
 Review `firestore.rules` for your own data model before production. Never put service-account credentials in a Vite environment file.
 
+## Demo and Live modes
+
+PulseGrid defaults to **Demo Mode**. Demo analytics and device telemetry are visibly marked as sample/simulated data so they cannot be mistaken for production measurements.
+
+Switch to **Live Mode** inside the dashboard and choose one of three adapters:
+
+- **HTTP / REST** — PulseGrid polls a JSON endpoint at a selectable interval.
+- **WebSocket** — PulseGrid listens for JSON telemetry messages in real time.
+- **Firebase Firestore** — PulseGrid watches the newest document in `devices/{deviceId}/telemetry`.
+
+A live HTTP or WebSocket payload can be as small as:
+
+```json
+{
+  "deviceId": "nano-edge-01",
+  "uptime": 5820,
+  "cpuLoad": 41.6,
+  "temperature": 38.4,
+  "ping": 27,
+  "memory": 52.1,
+  "packetLoss": 0.1,
+  "timestamp": "2026-09-20T12:00:00.000Z"
+}
+```
+
+Aliases such as `cpu`, `temp`, `latency` and `memoryUsage` are normalized automatically.
+
+### Firebase Live Mode
+
+Provide the Firebase variables shown below, enable **Anonymous Authentication** in Firebase Authentication, and write telemetry documents to:
+
+```text
+devices/{deviceId}/telemetry/{sampleId}
+```
+
+Each document should include the telemetry fields above and a sortable `timestamp`. PulseGrid signs in anonymously and subscribes to the newest sample.
+
 ## Hardware simulation
 
 `src/hardware/telemetrySimulator.js` emits bounded, changing samples like a small streaming device source. The demo models Arduino Nano-class edge devices for interface development; values are simulated, not physical measurements.
-
-Replace the simulator adapter with WebSockets, MQTT-over-WebSocket, an HTTP stream or Firestore snapshots to connect real hardware.
 
 ## Project structure
 
@@ -90,6 +127,11 @@ pulsegrid/
 │   │       └── Sidebar.jsx
 │   ├── config/firebase.js
 │   ├── data/mockUsers.js
+│   ├── dataSources/
+│   │   ├── firestoreSource.js
+│   │   ├── httpSource.js
+│   │   ├── normalizeTelemetry.js
+│   │   └── webSocketSource.js
 │   ├── hardware/
 │   │   ├── devices.js
 │   │   └── telemetrySimulator.js
